@@ -319,6 +319,11 @@ Page({
     try {
       const cached = wx.getStorageSync(CRAWL_CACHE_KEY);
       if (!cached || typeof cached !== 'object') return;
+      console.log('[restoreCrawlCache] Restoring from cache...');
+      console.log('[restoreCrawlCache] crawlProducts count:', cached.crawlProducts?.length);
+      if (cached.crawlProducts && cached.crawlProducts.length > 0) {
+        console.log('[restoreCrawlCache] First product image:', cached.crawlProducts[0]?.image);
+      }
       this.setData({
         crawlSearchedInput: cached.crawlSearchedInput || '',
         crawlSearchedQuery: cached.crawlSearchedQuery || '',
@@ -388,6 +393,8 @@ Page({
   rebuildCombined() {
     const compare = Array.isArray(this.data.products) ? this.data.products : [];
     const crawl = Array.isArray(this.data.crawlProducts) ? this.data.crawlProducts : [];
+    console.log('[rebuildCombined] compare products:', compare.length);
+    console.log('[rebuildCombined] crawl products:', crawl.length);
     const merged = [];
     const seen = new Set();
     const add = (it, source) => {
@@ -400,6 +407,12 @@ Page({
     compare.forEach((it) => add(it, 'compare'));
     crawl.forEach((it) => add(it, 'crawl'));
 
+    console.log('[rebuildCombined] merged products:', merged.length);
+    console.log('[rebuildCombined] First 3 merged items:');
+    merged.slice(0, 3).forEach((p, i) => {
+      console.log(`  [${i}] id=${p.id}, image=${p.image}, title=${p.title?.substring(0, 30)}`);
+    });
+
     const priceOf = (it) => {
       const raw = (it && (it.priceCny || it.price)) ? Number(it.priceCny || it.price) : NaN;
       return Number.isFinite(raw) ? raw : Number.POSITIVE_INFINITY;
@@ -409,6 +422,9 @@ Page({
     const pageSize = this.data.combinedPageSize || this.data.pageSize || 3;
     const pageIndex = Math.max(1, Number(this.data.combinedPageIndex || 1));
     const display = merged.slice(0, pageIndex * pageSize);
+
+    console.log('[rebuildCombined] display products:', display.length);
+    console.log('[rebuildCombined] First display item image:', display[0]?.image);
 
     this.setData({
       combinedProducts: merged,
@@ -608,6 +624,11 @@ Page({
           return;
         }
         const products = data.products || [];
+        console.log('[compare] Crawl products received:', products.length);
+        console.log('[compare] First 3 products image check:');
+        products.slice(0, 3).forEach((p, i) => {
+          console.log(`  [${i}] id=${p.id}, image=${p.image}, title=${p.title?.substring(0, 30)}`);
+        });
         const crawlDisplayProducts = products.slice(0, this.data.crawlPageSize);
         const evidenceUrl = (data.evidence && data.evidence[0] && data.evidence[0].evidenceUrl) ? data.evidence[0].evidenceUrl : '';
         // Prefer absolute URL provided by server to avoid stale baseUrl/IP issues.
@@ -642,8 +663,9 @@ Page({
           crawlHasMore: true,
         });
       },
-      fail: () => {
+      fail: (err) => {
         if (requestId !== activeRequestId) return;
+        console.log('[compare] Crawler request failed:', err);
         this.setData({ crawlError: `爬虫请求失败：${baseUrl}（请确认后端 3001 已启动）` });
       },
       complete: () => {
@@ -696,10 +718,12 @@ Page({
   onImgError(e) {
     const ds = e && e.currentTarget && e.currentTarget.dataset ? e.currentTarget.dataset : {};
     const idx = Number(ds.idx);
+    console.log('[onImgError] Image load failed, idx:', idx);
     if (!Number.isFinite(idx) || idx < 0) return;
     if (!this.data.combinedDisplayProducts || idx >= this.data.combinedDisplayProducts.length) return;
-    const path = `combinedDisplayProducts[${idx}].image`;
-    this.setData({ [path]: '' });
+    const product = this.data.combinedDisplayProducts[idx];
+    console.log('[onImgError] Failed image URL:', product?.image);
+    // 不再清空image字段，保持原始URL以便重试
   },
 
   onReachBottom() {
@@ -892,7 +916,10 @@ Page({
       // ignore
     }
     this.setData({
+      view: 'search',
+      searchedInput: '',
       searchedQuery: '',
+      sourceUrl: '',
       imageUrl: '',
       platformBest: [],
       failures: [],
@@ -907,15 +934,20 @@ Page({
       combinedPageIndex: 0,
       error: '',
 
+      crawlSearchedInput: '',
       crawlSearchedQuery: '',
+      crawlSourceUrl: '',
       crawlGeneratedAt: '',
       crawlEvidenceUrl: '',
       crawlChartUrl: '',
       crawlProducts: [],
       crawlDisplayProducts: [],
       crawlPageIndex: 0,
+      crawlRemotePage: 1,
+      crawlHasMore: true,
       crawlError: '',
     });
+    console.log('[onClear] Cache cleared, all data reset');
   },
 
 });

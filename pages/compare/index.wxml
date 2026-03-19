@@ -62,8 +62,7 @@
     <view class="grid">
       <view wx:for="{{combinedDisplayProducts}}" wx:for-index="idx" wx:key="url" class="result" bindtap="onCardTap" bindlongpress="onCopyLink" data-idx="{{idx}}" data-url="{{item.url}}">
         <view class="result-card">
-          <image wx:if="{{item.image && (item.image.startsWith('https://') || item.image.startsWith('http://'))}}" class="thumb" src="{{item.image}}" mode="aspectFill" lazy-load="true" catchtap="onCardTap" binderror="onImgError" data-idx="{{idx}}" />
-          <view wx:else class="thumb thumb-ph" catchtap="onCardTap" data-idx="{{idx}}"><text class="ph">No Image</text></view>
+          <image class="thumb" src="{{item.image}}" mode="aspectFill" lazy-load="true" catchtap="onCardTap" binderror="onImgError" data-idx="{{idx}}" />
           <view class="info">
             <view class="name ellipsis" hover-class="title-hover" bindtap="onShowTitle" data-title="{{item.title}}">{{item.title}}</view>
             <view class="meta">
