@@ -1,0 +1,36 @@
+{
+  "libVersion": "3.14.3",
+  "projectname": "miniprogram-3",
+  "condition": {
+    "miniprogram": {
+      "list": [
+        {
+          "name": "pages/compare/index",
+          "pathName": "pages/compare/index",
+          "query": "",
+          "scene": null,
+          "launchMode": "default"
+        }
+      ]
+    }
+  },
+  "setting": {
+    "urlCheck": false,
+    "coverView": true,
+    "lazyloadPlaceholderEnable": false,
+    "skylineRenderEnable": false,
+    "preloadBackgroundData": false,
+    "autoAudits": false,
+    "useApiHook": true,
+    "useApiHostProcess": true,
+    "showShadowRootInWxmlPanel": true,
+    "useStaticServer": true,
+    "useLanDebug": true,
+    "showES6CompileOption": false,
+    "compileHotReLoad": true,
+    "checkInvalidKey": true,
+    "ignoreDevUnusedFiles": false,
+    "bigPackageSizeSupport": true,
+    "useIsolateContext": true
+  }
+}

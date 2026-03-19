@@ -1,0 +1,74 @@
+<view class="page">
+  <view wx:if="{{error}}" class="card msg error-card">
+    <view class="subtitle">请求错误</view>
+    <view class="error">{{error}}</view>
+  </view>
+
+  <view class="card">
+    <view class="section-head">
+      <view class="subtitle">商品详情</view>
+      <view class="pill pill-ghost">{{item.platform}}</view>
+    </view>
+    <view class="product-hero">
+      <image wx:if="{{item.image}}" class="hero-img" src="{{item.image}}" mode="aspectFit" lazy-load="true" binderror="onMainImgError" />
+      <view wx:else class="hero-img hero-ph"><text class="ph">No Image</text></view>
+      <view class="hero-info">
+        <view class="title">{{item.title}}</view>
+        <view class="meta">
+          <text class="small">ID: {{item.id}}</text>
+          <text wx:if="{{item.matchGroupId}}" class="pill pill-ghost">同款 {{item.matchGroupId}}</text>
+        </view>
+        <view class="hero-price">
+          <text class="hero-price-num">¥{{item.priceCny}}</text>
+          <text class="hero-price-sub small">{{item.currency}}</text>
+        </view>
+      </view>
+    </view>
+    <view class="actions">
+      <button class="btn" bindtap="onRefresh" loading="{{loading}}" disabled="{{loading}}">刷新</button>
+      <button class="btn btn-ghost" bindtap="onOpenWeb">打开商品页</button>
+    </view>
+  </view>
+
+
+
+  <view class="card list" wx:if="{{stats}}">
+    <view class="subtitle">购买情况（基于抓取记录）</view>
+    <view class="row"><view class="row-left">记录次数</view><view class="val">{{stats.points}}</view></view>
+    <view class="row"><view class="row-left">价格波动次数</view><view class="val">{{stats.changes}}</view></view>
+    <view class="row"><view class="row-left">最低价</view><view class="val">¥{{stats.min}}</view></view>
+    <view class="row"><view class="row-left">最高价</view><view class="val">¥{{stats.max}}</view></view>
+    <view class="row"><view class="row-left">均价</view><view class="val">¥{{stats.avg}}</view></view>
+    <view class="row"><view class="row-left">最近价格</view><view class="val">¥{{stats.last}}</view></view>
+    <view class="row small" wx:if="{{stats.lastAt}}"><view class="row-left">最近记录时间</view><view>{{stats.lastAt}}</view></view>
+  </view>
+
+  <view class="card list" wx:if="{{snapshots.length}}">
+    <view class="subtitle">历史价格明细</view>
+    <view wx:for="{{snapshots}}" wx:key="id" class="row">
+      <view class="row-left ellipsis">{{item.createdAt}}</view>
+      <view class="val">¥{{item.priceCny}}</view>
+    </view>
+  </view>
+
+  <view class="card list" wx:if="{{related.length}}">
+    <view class="subtitle">相关商品</view>
+    <view class="grid">
+      <view wx:for="{{related}}" wx:for-index="idx" wx:key="id" class="result" bindtap="onRelatedTap" data-idx="{{idx}}">
+        <image wx:if="{{item.image}}" class="thumb" src="{{item.image}}" mode="aspectFit" lazy-load="true" binderror="onRelatedImgError" data-idx="{{idx}}" />
+        <view wx:else class="thumb thumb-ph"><text class="ph">No Image</text></view>
+        <view class="info">
+          <view class="name ellipsis">{{item.title}}</view>
+          <view class="meta">
+            <text class="platform">{{item.platform}}</text>
+            <text class="dot">·</text>
+            <text class="small">{{item.itemId}}</text>
+          </view>
+          <view class="price-line">
+            <text class="price">¥{{item.priceCny}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

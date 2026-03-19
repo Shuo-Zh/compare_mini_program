@@ -1,0 +1,5 @@
+<view class="test-container">
+  <goods-card
+    data="{{testGoods}}"
+  />
+</view>

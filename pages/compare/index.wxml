@@ -1,0 +1,87 @@
+<view class="page">
+  <view class="card">
+    <view class="subtitle">搜索</view>
+    <view class="nav">
+      <view class="nav-left"></view>
+      <view class="nav-title">价格对比</view>
+      <view class="nav-right"></view>
+    </view>
+    <view class="search">
+      <input class="ipt ipt-search" placeholder="输入商品关键词或粘贴京东/淘宝链接" value="{{query}}" bindinput="onInput" bindblur="onInputBlur" confirm-type="search" bindconfirm="onInputConfirm" />
+      <button class="btn btn-search" loading="{{loading}}" disabled="{{loading}}" bindtap="onCompare">比价</button>
+    </view>
+    <view class="devbar">
+      <view class="devleft ellipsis">后端：{{baseUrl}}</view>
+      <view class="devright">
+        <text class="devlink" bindtap="onPing">测试连接</text>
+        <text class="devsep">·</text>
+        <text class="devlink" bindtap="onToggleDev">{{showDev ? '收起' : '设置'}}</text>
+      </view>
+    </view>
+    <view wx:if="{{pingMsg}}" class="small">{{pingMsg}}</view>
+    <view wx:if="{{showDev}}" class="devpanel">
+      <input class="ipt" placeholder="例如 http://172.20.10.6:3001" value="{{devBaseUrlInput}}" bindinput="onDevBaseUrlInput" />
+      <view class="devactions">
+        <button class="btn btn-ghost" bindtap="onSaveBaseUrl">保存</button>
+        <view class="devtoggle">
+          <text class="small">扩展平台</text>
+          <switch checked="{{enableExtraPlatforms}}" bindchange="onToggleExtra" />
+        </view>
+      </view>
+      <view wx:if="{{navError}}" class="small warn-text">导航错误：{{navError}}</view>
+    </view>
+    <view class="search-actions">
+      <view class="clear" bindtap="onClear">清除结果</view>
+    </view>
+  </view>
+
+  <view wx:if="{{error}}" class="card msg error-card">
+    <view class="subtitle">请求错误</view>
+    <view class="error">{{error}}</view>
+  </view>
+
+  <!-- 已合并为单一结果流，不再单独展示“最低价/失败”区块 -->
+
+  <view wx:if="{{combinedDisplayProducts.length}}" class="card list">
+    <view class="section-head">
+      <view class="subtitle">结果流</view>
+      <view class="section-hint">每页3条 · 触底继续</view>
+    </view>
+    <view class="subline ellipsis">输入：{{searchedInput || crawlSearchedInput || query}}</view>
+    <view class="subline ellipsis">关键词：{{searchedQuery || crawlSearchedQuery || searchedInput || query}}</view>
+    <view class="evidence-row" wx:if="{{sourceUrl || crawlSourceUrl}}">
+      <text wx:if="{{sourceUrl}}" class="pill-link" bindtap="onOpenSource" data-url="{{sourceUrl}}">识别来源</text>
+      <text wx:if="{{crawlSourceUrl}}" class="pill-link" bindtap="onOpenSource" data-url="{{crawlSourceUrl}}">爬虫来源</text>
+    </view>
+    <view wx:if="{{loading || crawlLoading}}" class="small">正在紧密搜罗中！</view>
+    <view wx:if="{{crawlError}}" class="small warn-text">爬虫：{{crawlError}}</view>
+    <view class="evidence-row" wx:if="{{crawlEvidenceUrl}}">
+      <text class="pill-link" bindtap="onOpenEvidence" data-url="{{crawlEvidenceUrl}}">查看抓取证据</text>
+    </view>
+
+    <view class="grid">
+      <view wx:for="{{combinedDisplayProducts}}" wx:for-index="idx" wx:key="url" class="result" bindtap="onCardTap" bindlongpress="onCopyLink" data-idx="{{idx}}" data-url="{{item.url}}">
+        <view class="result-card">
+          <image wx:if="{{item.image && (item.image.startsWith('https://') || item.image.startsWith('http://'))}}" class="thumb" src="{{item.image}}" mode="aspectFill" lazy-load="true" catchtap="onCardTap" binderror="onImgError" data-idx="{{idx}}" />
+          <view wx:else class="thumb thumb-ph" catchtap="onCardTap" data-idx="{{idx}}"><text class="ph">No Image</text></view>
+          <view class="info">
+            <view class="name ellipsis" hover-class="title-hover" bindtap="onShowTitle" data-title="{{item.title}}">{{item.title}}</view>
+            <view class="meta">
+              <text class="platform">{{item.platform}}</text>
+              <text class="dot">·</text>
+              <text class="small">{{item.id}}</text>
+              <text wx:if="{{item.matchGroupId}}" class="group" bindtap="onGroupTap" data-groupid="{{item.matchGroupId}}" data-title="{{item.title}}">同款 {{item.matchGroupId}}</text>
+            </view>
+            <view class="price-line">
+              <text class="price">¥{{item.priceCny || item.price}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+  <view wx:elif="{{(searchedQuery || crawlSearchedQuery) && !combinedDisplayProducts.length && !loading && !crawlLoading && !error}}" class="card msg">
+    <view class="subtitle">结果流</view>
+    <view class="small">未找到结果，请换个关键词或粘贴商品链接再试。</view>
+  </view>
+</view>
