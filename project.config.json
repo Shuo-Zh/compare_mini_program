@@ -34,7 +34,7 @@
     "lazyloadPlaceholderEnable": false,
     "useMultiFrameRuntime": true,
     "useApiHook": true,
-    "useApiHostProcess": true,
+    "useApiHostProcess": false,
     "ignoreDevUnusedFiles": false,
     "babelSetting": {
       "ignore": [],
