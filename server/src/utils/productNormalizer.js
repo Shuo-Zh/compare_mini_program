@@ -10,7 +10,7 @@ export function extractNikeDunkSignals(title = '') {
   const t = normalizeTitle(title);
   const hasNike = t.includes('nike');
   const hasDunk = t.includes('dunk');
-  const lowHigh = t.includes(' low ') || t.endsWith(' low') ? 'low' : t.includes(' high ') ? 'high' : '';
+  const lowHigh = t.includes(' low ') || t.endsWith(' low') ? 'low' : t.includes(' high ') || t.endsWith(' high') ? 'high' : '';
   const modelCode = (title.match(/\b[A-Z0-9]{6}-\d{3}\b/) || [])[0] || '';
   const colorway = guessColorway(t);
 

@@ -207,7 +207,7 @@ Page({
           } catch (_e) {
             // ignore
           }
-          this.setData({ _retriedBaseUrl: true }, () => this.onRefresh());
+          this.setData({ _retriedBaseUrl: true }, () => this.onRefresh(callback));
           return;
         }
         this.setData({ error: `请求失败：${baseUrl}（请确认后端 3001 已启动，且小程序后端地址为局域网IP）` });
@@ -296,10 +296,24 @@ Page({
 
   onOpenWeb() {
     const url = (this.data.item && this.data.item.url) ? this.data.item.url : '';
-    if (!url) return;
-    wx.navigateTo({
-      url: `/pages/compare/webview/index?url=${encodeURIComponent(url)}`,
-      fail: () => wx.setClipboardData({ data: url, success: () => wx.showToast({ title: '链接已复制' }) }),
+    if (!url) {
+      wx.showToast({ title: '暂无商品链接', icon: 'none' });
+      return;
+    }
+    // 复制链接到剪贴板
+    wx.setClipboardData({
+      data: url,
+      success: () => {
+        wx.showModal({
+          title: '链接已复制',
+          content: '商品链接已复制到剪贴板，请在浏览器中打开',
+          showCancel: false,
+          confirmText: '我知道了'
+        });
+      },
+      fail: () => {
+        wx.showToast({ title: '复制失败', icon: 'none' });
+      }
     });
   },
 });
