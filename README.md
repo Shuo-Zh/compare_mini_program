@@ -1,119 +1,260 @@
+# 全网价格对比小程序
+
 <p align="center">
-  <a href="https://tdesign.tencent.com/" target="_blank">
-    <img alt="TDesign Logo" width="200" src="https://tdesign.gtimg.com/site/TDesign.png">
-  </a>
+  <img alt="Price Compare Logo" width="120" src="https://img.icons8.com/color/240/price-comparison.png">
 </p>
 
 <p align="center">
-  <a href="https://img.shields.io/github/stars/Tencent/tdesign-miniprogram-starter-retail">
-    <img src="https://img.shields.io/github/stars/Tencent/tdesign-miniprogram-starter-retail" alt="License">
+  <a href="https://github.com/Shuo-Zh/compare_mini_program">
+    <img src="https://img.shields.io/github/stars/Shuo-Zh/compare_mini_program?style=social" alt="Stars">
   </a>
-  <a href="https://github.com/Tencent/tdesign-miniprogram-starter-retail/issues">
-    <img src="https://img.shields.io/github/issues/Tencent/tdesign-miniprogram-starter-retail" alt="License">
+  <a href="https://github.com/Shuo-Zh/compare_mini_program/issues">
+    <img src="https://img.shields.io/github/issues/Shuo-Zh/compare_mini_program" alt="Issues">
   </a>
-  <a href="https://github.com/Tencent/tdesign-miniprogram-starter-retail/LICENSE">
-    <img src="https://img.shields.io/github/license/Tencent/tdesign-miniprogram-starter-retail" alt="License">
-  </a>
-  <a href="https://www.npmjs.com/package/tdesign-miniprogram">
-    <img src="https://img.shields.io/npm/v/tdesign-miniprogram.svg?sanitize=true" alt="Version">
-  </a>
-  <a href="https://www.npmjs.com/package/tdesign-miniprogram">
-    <img src="https://img.shields.io/npm/dw/tdesign-miniprogram" alt="Downloads">
+  <a href="https://github.com/Shuo-Zh/compare_mini_program/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/Shuo-Zh/compare_mini_program" alt="License">
   </a>
 </p>
 
-# TDesign 零售行业模版示例小程序
+## 📝 项目简介
 
-TDesign 零售模版示例小程序采用 [TDesign 企业级设计体系小程序解决方案](https://tdesign.tencent.com/miniprogram/overview) 进行搭建，依赖 [TDesign 微信小程序组件库](https://github.com/Tencent/tdesign-miniprogram)，涵盖完整的基本零售场景需求。
+全网价格对比小程序是一个专注于**商品价格追踪与对比**的工具类小程序。通过抓取多个电商平台的商品数据，帮助用户找到最优惠的购买渠道，并提供历史价格趋势分析，避免高价买入。
 
-## :pushpin: 项目介绍
+### ✨ 核心功能
 
-### 1. 业务介绍
+- 🔍 **全网比价**: 支持 Farfetch、Mytheresa、Shopbop、京东、淘宝、拼多多等 12+ 平台
+- 📊 **历史价格**: 查看商品近 180 天的价格走势
+- 🔔 **同款识别**: 自动识别不同平台的同款商品进行比价
+- 📱 **商品详情**: 展示商品图片、价格、历史记录等详细信息
+- 🔄 **实时刷新**: 下拉刷新获取最新价格数据
 
-零售行业模版小程序是个经典的单店版电商小程序，涵盖了电商的黄金链路流程，从商品->购物车->结算->订单等。小程序总共包含 28 个完整的页面，涵盖首页，商品详情页，个人中心，售后流程等基础页面。采用 mock 数据进行展示，提供了完整的零售商品展示、交易与售后流程。页面详情：
+## 🏗️ 技术架构
 
-<img src="https://tdesign.gtimg.com/miniprogram/template/retail/tdesign-starter-readmeV1.png" width = "650" height = "900" alt="模版小程序页面详情" align=center />
+### 前端（微信小程序）
+- **框架**: 微信小程序原生开发
+- **组件库**: TDesign 小程序组件库
+- **语言**: JavaScript + WXSS + WXML
+- **构建**: 微信开发者工具
 
-主要页面截图如下：
+### 后端（Node.js）
+- **框架**: Express.js
+- **数据库**: SQLite（商品数据存储）
+- **爬虫**: Cheerio + Playwright（可选）
+- **图表**: Chart.js + chartjs-node-canvas
+- **测试**: Jest + Supertest
 
-<p align="center">
-    <img alt="example-home" width="200" src="https://tdesign.gtimg.com/miniprogram/template/retail/example/v1/home.png" />
-    <img alt="example-sort" width="200" src="https://tdesign.gtimg.com/miniprogram/template/retail/example/v2/sort.png" />
-    <img alt="example-cart" width="200" src="https://tdesign.gtimg.com/miniprogram/template/retail/example/v1/cart.png" />
-    <img alt="example-user-center" width="200" src="https://tdesign.gtimg.com/miniprogram/template/retail/example/v1/user-center.png" />
-    <img alt="example-goods-detail" width="200" src="https://tdesign.gtimg.com/miniprogram/template/retail/example/v1/goods-detail.png" />
-    <img alt="example-pay" width="200" src="https://tdesign.gtimg.com/miniprogram/template/retail/example/v1/pay.png" />
-    <img alt="example-order" width="200" src="https://tdesign.gtimg.com/miniprogram/template/retail/example/v1/order.png" />
-    <img alt="example-order-detail" width="200" src="https://tdesign.gtimg.com/miniprogram/template/retail/example/v2/order.png" />
-</p>
-
-### 2. 项目构成
-
-零售行业模版小程序采用基础的 JavaScript + WXSS + ESLint 进行构建，降低了使用门槛。
-
-项目目录结构如下：
+## 📁 项目结构
 
 ```
-|-- tdesign-miniprogram-starter
-    |-- README.md
-    |-- app.js
-    |-- app.json
-    |-- app.wxss
-    |-- components	//	公共组件库
-    |-- config	//	基础配置
-    |-- custom-tab-bar	//	自定义 tabbar
-    |-- model	//	mock 数据
-    |-- pages
-    |   |-- cart	//	购物车相关页面
-    |   |-- coupon	//	优惠券相关页面
-    |   |-- goods	//	商品相关页面
-    |   |-- home	//	首页
-    |   |-- order	//	订单售后相关页面
-    |   |-- promotion-detail	//	营销活动页面
-    |   |-- usercenter	//	个人中心及收货地址相关页面
-    |-- services	//	请求接口
-    |-- style	//	公共样式与iconfont
-    |-- utils	//	工具库
+compare_mini_program/
+├── 📱 小程序前端
+│   ├── pages/
+│   │   ├── compare/          # 全网比价主页面
+│   │   │   ├── index.js      # 搜索、比价逻辑
+│   │   │   ├── index.wxml    # 页面结构
+│   │   │   ├── index.wxss    # 页面样式
+│   │   │   └── index.json    # 页面配置
+│   │   └── item/             # 商品详情页
+│   │       ├── index.js      # 历史价格、相关商品
+│   │       ├── index.wxml
+│   │       ├── index.wxss
+│   │       └── index.json
+│   ├── components/           # 公共组件
+│   │   ├── goods-card/       # 商品卡片
+│   │   ├── goods-list/       # 商品列表
+│   │   ├── price/            # 价格展示
+│   │   └── webp-image/       # 图片组件
+│   ├── config/
+│   │   └── compare.js        # 后端地址配置
+│   ├── app.js                # 小程序入口
+│   ├── app.json              # 全局配置
+│   └── app.wxss              # 全局样式
+│
+├── 🖥️ 后端服务
+│   ├── src/
+│   │   ├── index.js          # 服务入口
+│   │   ├── adapters/         # 平台适配器
+│   │   │   ├── farfetchAdapter.js
+│   │   │   ├── jdAdapter.js
+│   │   │   ├── taobaoAdapter.js
+│   │   │   └── ...
+│   │   ├── scrapers/         # 网页爬虫
+│   │   │   ├── farfetchScraper.js
+│   │   │   ├── itemScrapers.js
+│   │   │   └── ...
+│   │   ├── services/         # 业务逻辑
+│   │   │   ├── priceService.js      # 价格对比
+│   │   │   ├── productStore.js      # 数据存储
+│   │   │   ├── chartService.js      # 图表生成
+│   │   │   └── historyService.js    # 历史记录
+│   │   └── utils/            # 工具函数
+│   │       ├── fx.js         # 汇率转换
+│   │       ├── similarity.js # 相似度计算
+│   │       └── productNormalizer.js
+│   ├── __tests__/            # 单元测试
+│   │   ├── utils/
+│   │   └── api/
+│   └── package.json
+│
+└── 📄 配置文件
+    ├── .gitignore
+    ├── LICENSE
+    └── README.md
 ```
 
-### 3. 数据模拟
+## 🚀 快速开始
 
-零售小程序采用真实的接口数据，模拟后端返回逻辑，在小程序展示完整的购物场景与购物体验逻辑。
+### 环境要求
+- Node.js >= 18.0.0
+- 微信开发者工具
+- Git
 
-### 4. 添加新页面
+### 1. 克隆项目
 
-1. 在 `pages `目录下创建对应的页面文件夹
-2. 在 `app.json` 文件中的 ` "pages"` 数组中加上页面路径
-3. [可选] 在 `project.config.json` 文件的 `"miniprogram-list"` 下添加页面配置
+```bash
+git clone https://github.com/Shuo-Zh/compare_mini_program.git
+cd compare_mini_program
+```
 
-## :hammer: 构建运行
+### 2. 启动后端服务
 
-1. `npm install`
-2. 小程序开发工具中引入工程
-3. 构建 npm
+```bash
+cd server
+npm install
+npm run dev
+```
 
-## :art: 代码风格控制
+服务默认运行在 `http://localhost:3001`
 
-- `eslint`
-- `prettier`
+### 3. 配置小程序
 
-## :iphone: 基础库版本
+1. 打开微信开发者工具
+2. 导入项目，选择 `compare_mini_program` 目录
+3. 修改 `config/compare.js` 中的 `baseUrl` 为实际后端地址
+4. 点击"编译"运行
 
-最低基础库版本`^2.6.5`
+### 4. 运行测试
 
-## :dart: 反馈
+```bash
+# 后端测试
+cd server
+npm test
 
-有任何问题，建议通过 [Github issues](https://github.com/Tencent/tdesign-miniprogram/issues) 反馈或扫码加入用户微信群。
+# 查看测试覆盖率
+npm test -- --coverage
+```
 
-<img src="https://raw.githubusercontent.com/Tencent/tdesign/main/packages/site-components/src/images/groups/wx-group.png" width="200" />
+## 📊 支持的电商平台
 
-## :link: TDesign 其他技术栈实现
+| 平台 | 类型 | 状态 |
+|------|------|------|
+| Farfetch | 奢侈品 | ✅ 已支持 |
+| Mytheresa | 奢侈品 | ✅ 已支持 |
+| Shopbop | 时尚 | ✅ 已支持 |
+| Luisaviaroma | 奢侈品 | ✅ 已支持 |
+| Matchesfashion | 奢侈品 | ✅ 已支持 |
+| Revolve | 时尚 | ✅ 已支持 |
+| FWRD | 奢侈品 | ✅ 已支持 |
+| 24S | 奢侈品 | ✅ 已支持 |
+| 京东 | 综合电商 | ✅ 已支持 |
+| 淘宝 | 综合电商 | ✅ 已支持 |
+| 拼多多 | 综合电商 | ✅ 已支持 |
+| StockX | 潮鞋 | ✅ 已支持 |
 
-- 移动端 小程序 实现：[mobile-miniprogram](https://github.com/Tencent/tdesign-miniprogram)
-- 桌面端 Vue 2 实现：[web-vue](https://github.com/Tencent/tdesign-vue)
-- 桌面端 Vue 3 实现：[web-vue-next](https://github.com/Tencent/tdesign-vue-next)
-- 桌面端 React 实现：[web-react](https://github.com/Tencent/tdesign-react)
+## 🔧 API 接口
 
-## :page_with_curl: 开源协议
+### 健康检查
+```http
+GET /health
+```
 
-TDesign 遵循 [MIT 协议](https://github.com/Tencent/tdesign-miniprogram/LICENSE)。
+### 获取支持的平台列表
+```http
+GET /api/sources
+```
+
+### 商品比价
+```http
+POST /api/compare
+Content-Type: application/json
+
+{
+  "query": "Nike Dunk",
+  "pages": 1,
+  "limitPerSource": 8
+}
+```
+
+### 商品历史价格
+```http
+GET /api/item/history?platform=Farfetch&itemId=12345&days=180
+```
+
+### 刷新商品数据
+```http
+POST /api/item/refresh
+Content-Type: application/json
+
+{
+  "url": "https://www.farfetch.com/...",
+  "platform": "Farfetch",
+  "itemId": "12345"
+}
+```
+
+## 🧪 测试覆盖
+
+项目包含完整的单元测试，覆盖核心工具函数和 API：
+
+```
+Test Suites: 4 passed, 4 total
+Tests:       40 passed, 40 total
+Coverage:
+  - Statements: 58.63%
+  - Branches: 43.72%
+  - Functions: 69.04%
+  - Lines: 59.42%
+```
+
+### 测试文件
+- `server/__tests__/utils/fx.test.js` - 汇率转换测试
+- `server/__tests__/utils/similarity.test.js` - 相似度计算测试
+- `server/__tests__/utils/productNormalizer.test.js` - 商品标准化测试
+- `server/__tests__/api/health.test.js` - API 健康检查测试
+
+## 🛠️ 开发计划
+
+- [ ] 添加更多电商平台支持
+- [ ] 实现价格降价提醒功能
+- [ ] 优化爬虫性能和稳定性
+- [ ] 添加用户收藏功能
+- [ ] 支持价格趋势预测
+
+## 🤝 贡献指南
+
+1. Fork 本仓库
+2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 创建 Pull Request
+
+## 📄 开源协议
+
+本项目基于 [MIT 协议](LICENSE) 开源。
+
+## 👨‍💻 作者
+
+**Shuo-Zh** - [GitHub](https://github.com/Shuo-Zh)
+
+## 🙏 致谢
+
+- [TDesign](https://tdesign.tencent.com/) - 腾讯设计体系
+- [Cheerio](https://cheerio.js.org/) - 服务器端 HTML 解析
+- [Chart.js](https://www.chartjs.org/) - 图表库
+- [Express](https://expressjs.com/) - Web 框架
+
+---
+
+<p align="center">
+  如果这个项目对你有帮助，请给个 ⭐️ Star 支持一下！
+</p>
