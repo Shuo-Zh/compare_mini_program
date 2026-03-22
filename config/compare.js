@@ -4,6 +4,10 @@
 const DEFAULT_DEV_IP = '127.0.0.1';
 const DEFAULT_DEV_PORT = '3001';
 
+// 体验版/正式版后端地址配置
+// 注意：体验版和正式版必须使用 HTTPS 公网地址，不能使用本地 IP
+const PROD_BASE_URL = 'https://your-production-api.com';
+
 // 尝试从本地存储获取用户自定义的后端地址
 function getStoredDevBaseUrl() {
   try {
@@ -27,15 +31,27 @@ function getDevBaseUrl() {
   return `http://${DEFAULT_DEV_IP}:${DEFAULT_DEV_PORT}`;
 }
 
+// 验证 URL 是否有效
+function isValidUrl(url) {
+  if (!url || typeof url !== 'string') return false;
+  return url.startsWith('http://') || url.startsWith('https://');
+}
+
 const ENV = {
   develop: {
     baseUrl: getDevBaseUrl(),
+    // 开发版允许本地 IP
+    allowLocalIp: true,
   },
   trial: {
-    baseUrl: 'https://api.example.com',
+    // 体验版必须使用 HTTPS 公网地址
+    baseUrl: PROD_BASE_URL,
+    allowLocalIp: false,
   },
   release: {
-    baseUrl: 'https://api.example.com',
+    // 正式版必须使用 HTTPS 公网地址
+    baseUrl: PROD_BASE_URL,
+    allowLocalIp: false,
   },
 };
 
@@ -52,17 +68,46 @@ function getBaseUrl() {
     envVersion = 'develop';
   }
 
+  const config = ENV[envVersion] || ENV.develop;
+  
   // 开发环境下每次都重新计算，支持动态切换
   if (envVersion === 'develop') {
     return getDevBaseUrl();
   }
 
-  return ENV[envVersion]?.baseUrl || ENV.develop.baseUrl;
+  // 体验版/正式版检查
+  if (!config.allowLocalIp && config.baseUrl.includes('127.0.0.1')) {
+    console.warn(`[${envVersion}] 环境不能使用本地 IP，请配置公网 HTTPS 地址`);
+  }
+
+  return config.baseUrl;
+}
+
+// 获取当前环境信息
+function getEnvInfo() {
+  let envVersion = 'develop';
+  try {
+    const account = wx.getAccountInfoSync();
+    envVersion = account?.miniProgram?.envVersion || 'develop';
+  } catch (_e) {
+    envVersion = 'develop';
+  }
+
+  const config = ENV[envVersion] || ENV.develop;
+  
+  return {
+    version: envVersion,
+    baseUrl: getBaseUrl(),
+    allowLocalIp: config.allowLocalIp,
+    isProduction: envVersion === 'trial' || envVersion === 'release',
+  };
 }
 
 module.exports = {
   getBaseUrl,
   getDefaultDevBaseUrl,
+  getEnvInfo,
   DEFAULT_DEV_IP,
   DEFAULT_DEV_PORT,
+  PROD_BASE_URL,
 };
