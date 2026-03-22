@@ -32,6 +32,7 @@
 
 
 
+  <!-- 购买情况统计 -->
   <view class="card list" wx:if="{{stats}}">
     <view class="subtitle">购买情况（基于抓取记录）</view>
     <view class="row"><view class="row-left">记录次数</view><view class="val">{{stats.points}}</view></view>
@@ -40,17 +41,27 @@
     <view class="row"><view class="row-left">最高价</view><view class="val">¥{{stats.max}}</view></view>
     <view class="row"><view class="row-left">均价</view><view class="val">¥{{stats.avg}}</view></view>
     <view class="row"><view class="row-left">最近价格</view><view class="val">¥{{stats.last}}</view></view>
-    <view class="row small" wx:if="{{stats.lastAt}}"><view class="row-left">最近记录时间</view><view>{{stats.lastAt}}</view></view>
+    <view class="row small" wx:if="{{stats.lastAtFormatted}}"><view class="row-left">最近记录时间</view><view>{{stats.lastAtFormatted}}</view></view>
+  </view>
+  <view class="card msg" wx:elif="{{!loading && !error}}">
+    <view class="subtitle">购买情况</view>
+    <view class="small">暂无价格记录，下拉刷新或点击"刷新"按钮获取历史价格数据</view>
   </view>
 
+  <!-- 历史价格明细 -->
   <view class="card list" wx:if="{{snapshots.length}}">
     <view class="subtitle">历史价格明细</view>
     <view wx:for="{{snapshots}}" wx:key="id" class="row">
-      <view class="row-left ellipsis">{{item.createdAt}}</view>
+      <view class="row-left ellipsis">{{item.createdAtFormatted}}</view>
       <view class="val">¥{{item.priceCny}}</view>
     </view>
   </view>
+  <view class="card msg" wx:elif="{{!loading && !error}}">
+    <view class="subtitle">历史价格明细</view>
+    <view class="small">暂无历史价格数据</view>
+  </view>
 
+  <!-- 相关商品 -->
   <view class="card list" wx:if="{{related.length}}">
     <view class="subtitle">相关商品</view>
     <view class="grid">
@@ -70,5 +81,9 @@
         </view>
       </view>
     </view>
+  </view>
+  <view class="card msg" wx:elif="{{!loading && !error}}">
+    <view class="subtitle">相关商品</view>
+    <view class="small">暂无相关商品推荐</view>
   </view>
 </view>

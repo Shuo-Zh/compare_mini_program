@@ -2,6 +2,20 @@ const { getBaseUrl } = require('../../config/compare');
 
 const ITEM_TAP_KEY = 'compare:last_item_tap_v1';
 
+function formatDateTime(isoString) {
+  if (!isoString) return '';
+  const date = new Date(isoString);
+  if (isNaN(date.getTime())) return isoString;
+  
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  
+  return `${year}-${month}-${day} ${hours}:${minutes}`;
+}
+
 Page({
   data: {
     key: '',
@@ -33,7 +47,6 @@ Page({
     // 2) Fallback to the default "last tapped" key so devs can open /pages/item/index directly
     const key = q.key ? String(q.key) : ITEM_TAP_KEY;
     this.setData({ key });
-    this.restoreItem(key);
 
     // Allow opening item detail directly with a URL (for debugging / deep links).
     // Example: /pages/item/index?url=https%3A%2F%2Fwww.farfetch.com%2F...&platform=Farfetch&itemId=123
@@ -42,7 +55,12 @@ Page({
     const itemId = q.itemId ? String(q.itemId) : '';
     const title = q.title ? safeDecode(String(q.title)) : '';
     const image = q.image ? safeDecode(String(q.image)) : '';
+    const priceCny = q.priceCny ? Number(q.priceCny) : 0;
+
+    console.log('[onLoad] URL params:', { url, platform, itemId, title, image, priceCny });
+
     if (url) {
+      // 如果URL参数存在，直接使用URL参数
       this.setData({
         item: {
           platform: platform || this.data.item.platform || '',
@@ -50,21 +68,32 @@ Page({
           title: title || this.data.item.title || '',
           image: image || this.data.item.image || '',
           url,
-          priceCny: this.data.item.priceCny || 0,
+          priceCny: priceCny || this.data.item.priceCny || 0,
           currency: this.data.item.currency || 'CNY',
           matchGroupId: this.data.item.matchGroupId || '',
         },
+      }, () => {
+        console.log('[onLoad] Item data set via URL params:', this.data.item);
+        // Auto-refresh on enter to "crawl history" for this specific product.
+        this.onRefresh();
+      });
+    } else {
+      // 否则从存储中恢复数据
+      this.restoreItem(key, () => {
+        // Auto-refresh on enter to "crawl history" for this specific product.
+        this.onRefresh();
       });
     }
-
-    // Auto-refresh on enter to "crawl history" for this specific product.
-    this.onRefresh();
   },
 
-  restoreItem(key) {
-    if (!key) return;
+  restoreItem(key, callback) {
+    if (!key) {
+      if (callback) callback();
+      return;
+    }
     try {
       const cached = wx.getStorageSync(key);
+      console.log('[restoreItem] Key:', key, 'Cached data:', cached);
       if (cached && typeof cached === 'object') {
         this.setData({
           item: {
@@ -77,19 +106,41 @@ Page({
             currency: cached.currency || 'CNY',
             matchGroupId: cached.matchGroupId || '',
           },
+        }, () => {
+          console.log('[restoreItem] Restored item url:', this.data.item.url);
+          if (callback) callback();
         });
+      } else {
+        console.log('[restoreItem] No valid cached data found');
+        if (callback) callback();
       }
     } catch (_e) {
-      // ignore
+      console.log('[restoreItem] Error:', _e);
+      if (callback) callback();
     }
   },
 
-  onRefresh() {
-    if (this.data.loading) return;
+  onPullDownRefresh() {
+    console.log('[onPullDownRefresh] Triggered');
+    this.onRefresh(() => {
+      wx.stopPullDownRefresh();
+      console.log('[onPullDownRefresh] Stopped');
+    });
+  },
+
+  onRefresh(callback) {
+    if (this.data.loading) {
+      if (callback) callback();
+      return;
+    }
     const baseUrl = getBaseUrl();
     const it = this.data.item || {};
+    console.log('[onRefresh] Item data:', it);
+    console.log('[onRefresh] Item URL:', it.url);
     if (!it.url) {
+      console.log('[onRefresh] ERROR: Missing URL');
       this.setData({ error: '缺少商品链接，无法刷新' });
+      if (callback) callback();
       return;
     }
 
@@ -134,8 +185,14 @@ Page({
           },
           total: Number(data.total || 0),
           trendImageUrl: data.imageUrl || '',
-          snapshots: Array.isArray(data.snapshots) ? data.snapshots.slice().reverse() : [],
-          stats: data.stats || null,
+          snapshots: Array.isArray(data.snapshots) ? data.snapshots.slice().reverse().map(s => ({
+            ...s,
+            createdAtFormatted: formatDateTime(s.createdAt)
+          })) : [],
+          stats: data.stats ? {
+            ...data.stats,
+            lastAtFormatted: formatDateTime(data.stats.lastAt)
+          } : null,
         });
 
         // Fetch related products after we have a stable title.
@@ -158,6 +215,7 @@ Page({
       complete: () => {
         wx.hideLoading();
         this.setData({ loading: false });
+        if (callback) callback();
       },
     });
   },
@@ -193,35 +251,34 @@ Page({
     const { idx } = e.currentTarget.dataset || {};
     const i = Number(idx);
     const item = (Number.isFinite(i) && i >= 0) ? (this.data.related || [])[i] : null;
-    if (!item || !item.url) return;
-
-    try {
-      wx.setStorageSync(ITEM_TAP_KEY, {
-        platform: item.platform || '',
-        id: item.itemId || item.id || '',
-        title: item.title || '',
-        image: item.image || '',
-        url: item.url || '',
-        priceCny: item.priceCny || 0,
-        currency: item.currency || 'CNY',
-        matchGroupId: '',
-      });
-    } catch (_e) {
-      // ignore
+    if (!item || !item.url) {
+      console.log('[onRelatedTap] No item or url found, idx:', idx, 'item:', item);
+      return;
     }
-    const target = `/pages/item/index?key=${encodeURIComponent(ITEM_TAP_KEY)}`;
-    wx.navigateTo({
+
+    console.log('[onRelatedTap] Tapped item:', item.title, 'url:', item.url);
+
+    // 直接通过URL参数传递商品数据
+    const target = `/pages/item/index?url=${encodeURIComponent(item.url)}&platform=${encodeURIComponent(item.platform)}&itemId=${encodeURIComponent(item.itemId || item.id)}&title=${encodeURIComponent(item.title)}&image=${encodeURIComponent(item.image)}&priceCny=${item.priceCny}`;
+    console.log('[onRelatedTap] Navigating to:', target);
+
+    // 先尝试 redirectTo（关闭当前页面打开新页面）
+    wx.redirectTo({
       url: target,
-      fail: (err) => wx.redirectTo({
-        url: target,
-        fail: (err2) => wx.reLaunch({
+      success: () => console.log('[onRelatedTap] redirectTo success'),
+      fail: (err) => {
+        console.log('[onRelatedTap] redirectTo failed:', err);
+        // 如果 redirectTo 失败，尝试 reLaunch
+        wx.reLaunch({
           url: target,
-          fail: (err3) => {
-            const msg = err3?.errMsg || err2?.errMsg || err?.errMsg || 'unknown';
+          success: () => console.log('[onRelatedTap] reLaunch success'),
+          fail: (err2) => {
+            console.log('[onRelatedTap] reLaunch failed:', err2);
+            const msg = err2?.errMsg || err?.errMsg || 'unknown';
             wx.showModal({ title: '无法打开商详页', content: msg, showCancel: false });
           },
-        }),
-      }),
+        });
+      },
     });
   },
 

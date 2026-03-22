@@ -3,7 +3,7 @@
     <view class="subtitle">搜索</view>
     <view class="nav">
       <view class="nav-left"></view>
-      <view class="nav-title">价格对比</view>
+      <view class="nav-title">全网价格对比</view>
       <view class="nav-right"></view>
     </view>
     <view class="search">
