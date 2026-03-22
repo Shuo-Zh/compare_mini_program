@@ -244,7 +244,7 @@ Coverage:
 
 ## 👨‍💻 作者
 
-**Shuo-Zh** - [GitHub](https://github.com/Shuo-Zh)
+**E大队** - [GitHub](https://github.com/Shuo-Zh)
 
 ## 🙏 致谢
 
