@@ -83,16 +83,25 @@ function getBaseUrl() {
   return config.baseUrl;
 }
 
-// 获取当前环境信息
-function getEnvInfo() {
-  let envVersion = 'develop';
+// 获取当前环境版本
+function getEnvVersion() {
   try {
     const account = wx.getAccountInfoSync();
-    envVersion = account?.miniProgram?.envVersion || 'develop';
+    return account?.miniProgram?.envVersion || 'develop';
   } catch (_e) {
-    envVersion = 'develop';
+    return 'develop';
   }
+}
 
+// 判断是否应该使用云开发（体验版和正式版使用云函数）
+function shouldUseCloud() {
+  const envVersion = getEnvVersion();
+  return envVersion === 'trial' || envVersion === 'release';
+}
+
+// 获取当前环境信息
+function getEnvInfo() {
+  const envVersion = getEnvVersion();
   const config = ENV[envVersion] || ENV.develop;
   
   return {
@@ -100,6 +109,7 @@ function getEnvInfo() {
     baseUrl: getBaseUrl(),
     allowLocalIp: config.allowLocalIp,
     isProduction: envVersion === 'trial' || envVersion === 'release',
+    useCloud: shouldUseCloud(),
   };
 }
 
@@ -107,6 +117,8 @@ module.exports = {
   getBaseUrl,
   getDefaultDevBaseUrl,
   getEnvInfo,
+  getEnvVersion,
+  shouldUseCloud,
   DEFAULT_DEV_IP,
   DEFAULT_DEV_PORT,
   PROD_BASE_URL,

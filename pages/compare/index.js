@@ -1,4 +1,5 @@
-const { getBaseUrl, getDefaultDevBaseUrl } = require('../../config/compare');
+const { getBaseUrl, getDefaultDevBaseUrl, getEnvVersion, shouldUseCloud } = require('../../config/compare');
+const { comparePrices, getItemHistory } = require('../../config/cloud');
 
 let activeRequestId = 0;
 const CACHE_KEY = 'compare:last_result_v2';
@@ -463,11 +464,19 @@ Page({
       this.setData({ error: '请输入关键词或粘贴商品链接' });
       return;
     }
+
+    // 体验版/正式版使用云函数
+    if (shouldUseCloud()) {
+      this.doCompareWithCloud(query);
+      return;
+    }
+
+    // 开发版使用 HTTP 请求
     const baseUrl = this.normalizeBaseUrl(this.data.baseUrl || getBaseUrl());
     this.setData({ pingMsg: '连接测试中...' });
     this.pingOnce(baseUrl, (ok) => {
       if (!ok) {
-        this.setData({ error: `后端连接失败：${baseUrl}（点“设置”更新）`, pingMsg: '连接失败' });
+        this.setData({ error: `后端连接失败：${baseUrl}（点"设置"更新）`, pingMsg: '连接失败' });
         return;
       }
       this.setData({ pingMsg: '连接正常' });
@@ -475,7 +484,115 @@ Page({
     });
   },
 
-  doCompare(baseUrl, query) {
+  // 使用云函数进行比价（体验版/正式版）
+  async doCompareWithCloud(query) {
+    const requestId = (activeRequestId += 1);
+    const startedAt = Date.now();
+
+    this.setData({
+      searchedInput: query,
+      searchedQuery: query,
+      sourceUrl: '',
+      crawlSearchedInput: query,
+      crawlSearchedQuery: query,
+      crawlSourceUrl: '',
+      loading: true,
+      crawlLoading: true,
+      error: '',
+      crawlError: '',
+      imageUrl: '',
+      platformBest: [],
+      failures: [],
+      generatedAt: '',
+      historyId: '',
+      products: [],
+      displayProducts: [],
+      pageIndex: 0,
+      combinedProducts: [],
+      combinedDisplayProducts: [],
+      combinedPageIndex: 0,
+      crawlGeneratedAt: '',
+      crawlEvidenceUrl: '',
+      crawlChartUrl: '',
+      crawlProducts: [],
+      crawlDisplayProducts: [],
+      crawlPageIndex: 0,
+      crawlRemotePage: 1,
+      crawlHasMore: true,
+      pingMsg: '云函数调用中...',
+    });
+    wx.showLoading({ title: '紧锣密鼓的搜罗中！请稍等！', mask: true });
+
+    try {
+      const result = await comparePrices(query, { limitPerSource: 20 });
+      
+      if (requestId !== activeRequestId) return;
+      
+      const products = result.products || [];
+      const displayProducts = products.slice(0, this.data.pageSize);
+      
+      this.setData({
+        view: 'results',
+        imageUrl: '',
+        platformBest: [],
+        failures: result.failures || [],
+        stats: result.stats || null,
+        generatedAt: result.generatedAt || '',
+        historyId: '',
+        searchedQuery: result.keyword || query,
+        sourceUrl: '',
+        products,
+        displayProducts,
+        pageIndex: 1,
+        error: '',
+        pingMsg: '云函数调用成功',
+      }, () => this.rebuildCombined());
+
+      this.setData({
+        crawlProducts: products,
+        crawlDisplayProducts: displayProducts,
+        crawlPageIndex: 1,
+        crawlHasMore: false,
+        crawlGeneratedAt: result.generatedAt || '',
+        crawlError: '',
+      }, () => this.rebuildCombined());
+
+      this.persistCache({
+        query,
+        searchedInput: query,
+        searchedQuery: result.keyword || query,
+        sourceUrl: '',
+        view: 'results',
+        imageUrl: '',
+        platformBest: [],
+        failures: result.failures || [],
+        stats: result.stats || null,
+        generatedAt: result.generatedAt || '',
+        historyId: '',
+        products,
+        displayProducts,
+        pageIndex: 1,
+      });
+
+    } catch (error) {
+      if (requestId !== activeRequestId) return;
+      console.error('云函数调用失败:', error);
+      this.setData({ 
+        error: `云函数调用失败：${error.message || '未知错误'}`,
+        pingMsg: '云函数调用失败',
+      });
+    } finally {
+      if (requestId !== activeRequestId) return;
+      const elapsed = Date.now() - startedAt;
+      const wait = Math.max(0, (this.data.minLoadingMs || 0) - elapsed);
+      setTimeout(() => {
+        wx.hideLoading();
+        this.setData({ loading: false, crawlLoading: false });
+      }, wait);
+    }
+  },
+
+  doCompare(baseUrl, query) {  doCompare(baseUrl, query) {
     const requestId = (activeRequestId += 1);
     const startedAt = Date.now();
 
