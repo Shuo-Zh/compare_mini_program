@@ -29,13 +29,14 @@ Page({
     historyId: '',
     products: [],
     displayProducts: [],
-    pageSize: 3,
+    pageSize: 4,
     pageIndex: 0,
     combinedProducts: [],
     combinedDisplayProducts: [],
     combinedPageIndex: 0,
-    combinedPageSize: 3,
+    combinedPageSize: 4,
     error: '',
+    networkError: false,
     minLoadingMs: 800,
 
     crawlLoading: false,
@@ -48,10 +49,11 @@ Page({
     crawlChartUrl: '',
     crawlProducts: [],
     crawlDisplayProducts: [],
-    crawlPageSize: 3,
+    crawlPageSize: 4,
     crawlPageIndex: 0,
     crawlRemotePage: 1,
     crawlHasMore: true,
+    loadMoreLoading: false,
     navError: '',
   },
 
@@ -79,35 +81,15 @@ Page({
       return;
     }
 
-    try {
-      wx.setStorageSync(ITEM_TAP_KEY, {
-        platform: item.platform || '',
-        id: item.id || '',
-        title: item.title || '',
-        image: item.image || '',
-        url: item.url || '',
-        priceCny: item.priceCny || item.price || 0,
-        currency: item.currency || 'CNY',
-        matchGroupId: item.matchGroupId || '',
-      });
-    } catch (_e) {
-      // ignore
-    }
-
-    // Keep the navigation URL extremely short. Some WeChat builds have fragile URL parsing/limits
-    // that can mis-handle query strings and report "page ... is not found".
-    // The detail page defaults to reading ITEM_TAP_KEY from storage when query is empty.
-    const target = '/pages/item/index';
-    this.setData({ navError: '' });
+    const target = `/pages/item/index?url=${encodeURIComponent(item.url)}&platform=${encodeURIComponent(item.platform || '')}&itemId=${encodeURIComponent(item.id || '')}&title=${encodeURIComponent(item.title || '')}&image=${encodeURIComponent(item.image || '')}&priceCny=${item.priceCny || item.price || 0}`;
 
     const report = (errLike, stage) => {
       const msg = (errLike && errLike.errMsg) ? String(errLike.errMsg) : 'unknown';
       const full = `${stage}: ${msg}`;
       this.setData({ navError: full });
-      console.warn(full, errLike);
       wx.showModal({
         title: '无法打开商详页',
-        content: `${full}\n\ntarget=${target}\n\n常见原因：\n1) 页面栈已满(10)\n2) 路由未编译或页面不存在\n\n可尝试：返回到首页后再试，或重新编译小程序`,
+        content: `${full}\n\ntarget=${target}`,
         showCancel: false,
       });
     };
@@ -115,29 +97,22 @@ Page({
     const pages = (typeof getCurrentPages === 'function') ? getCurrentPages() : [];
     const stackLen = Array.isArray(pages) ? pages.length : 0;
 
-    const doReLaunch = (err2, stage2) => {
-      wx.reLaunch({
-        url: target,
-        fail: (err3) => report(err3 || err2, stage2 ? `${stage2} -> reLaunch` : 'reLaunch'),
-      });
-    };
-
-    const doRedirect = (err, stage) => {
+    if (stackLen >= 9) {
       wx.redirectTo({
         url: target,
-        fail: (err2) => doReLaunch(err2 || err, stage ? `${stage} -> redirectTo` : 'redirectTo'),
+        fail: (err) => report(err, 'redirectTo'),
       });
-    };
-
-    // Avoid page stack overflow: use redirect when stack is close to 10.
-    if (stackLen >= 9) {
-      doRedirect({ errMsg: `page stack near limit (${stackLen})` }, 'precheck');
       return;
     }
 
     wx.navigateTo({
       url: target,
-      fail: (err) => doRedirect(err, 'navigateTo'),
+      fail: (err) => {
+        wx.redirectTo({
+          url: target,
+          fail: (err2) => report(err2 || err, 'navigateTo -> redirectTo'),
+        });
+      },
     });
   },
 
@@ -592,7 +567,7 @@ Page({
     }
   },
 
-  doCompare(baseUrl, query) {  doCompare(baseUrl, query) {
+  doCompare(baseUrl, query) {
     const requestId = (activeRequestId += 1);
     const startedAt = Date.now();
 
@@ -608,6 +583,14 @@ Page({
         this.setData({ loading: false, crawlLoading: false });
       }, wait);
     };
+
+    // 安全超时：最多等待 120 秒，无论请求是否完成都关闭 loading
+    setTimeout(() => {
+      if (requestId !== activeRequestId) return;
+      console.log('[compare] Safety timeout reached, forcing UI update');
+      wx.hideLoading();
+      this.setData({ loading: false, crawlLoading: false });
+    }, 120000);
 
     // Tie results to the search input at the time the user tapped "比价".
     // Clear previous results to avoid mismatch between input and displayed data.
@@ -646,27 +629,36 @@ Page({
     });
     wx.showLoading({ title: '紧锣密鼓的搜罗中！请稍等！', mask: true });
 
+    // 1. Compare API 请求 - 查询京东、淘宝、拼多多
     wx.request({
       url: `${baseUrl}/api/compare`,
       method: 'GET',
-      timeout: 20000,
+      timeout: 60000,
       data: {
         keyword: query,
-        pages: 10,
+        pages: 2,
         limitPerSource: 20,
         strictMode: false,
         nikeOnly: false,
-        // Trend chart has moved to item detail. Keep search page focused on "current" price results.
         persist: false,
       },
       success: (res) => {
         if (requestId !== activeRequestId) return;
         const data = res.data || {};
         if (res.statusCode !== 200) {
-          this.setData({ error: `${data.message || '请求失败'}${data.detail ? `：${data.detail}` : ''}` });
+          const errorMsg = `${data.message || '请求失败'}${data.detail ? `：${data.detail}` : ''}`;
+          // 如果是"没有抓到商品"的错误，不显示错误卡片，而是显示空状态
+          if (errorMsg.includes('没有抓到') || errorMsg.includes('未抓到')) {
+            console.log('[compare] 收到无结果错误，显示空状态');
+            this.setData({
+              searchedQuery: query,
+              error: '',
+            }, () => this.rebuildCombined());
+          } else {
+            this.setData({ error: errorMsg });
+          }
           return;
         }
-        // Prefer absolute URL provided by server to avoid stale baseUrl/IP issues.
         const imageUrl = data.imageUrl || (data.imagePath ? `${baseUrl}/${data.imagePath}` : '');
         const products = data.products || [];
         const displayProducts = products.slice(0, this.data.pageSize);
@@ -706,7 +698,10 @@ Page({
       },
       fail: () => {
         if (requestId !== activeRequestId) return;
-        this.setData({ error: `请求失败：${baseUrl}（请确认后端 3001 已启动）` });
+        this.setData({ 
+          error: `请求失败：${baseUrl}（请确认后端 3001 已启动）`,
+          networkError: true
+        });
       },
       complete: () => {
         if (requestId !== activeRequestId) return;
@@ -714,20 +709,17 @@ Page({
       },
     });
 
-    // Also run Farfetch crawler with the same keyword and show results below.
+    // 2. Farfetch 爬虫请求
     const extraPlatforms = ['mytheresa', 'shopbop', 'luisaviaroma', 'matchesfashion', 'revolve', 'fwrd', 's24'];
     wx.request({
       url: `${baseUrl}/api/scrape`,
       method: 'POST',
-      timeout: 45000,
+      timeout: 90000,
       data: {
         keyword: query,
-        // Default to Farfetch (stable via r.jina.ai). Extra platforms are experimental and often blocked.
         platforms: this.data.enableExtraPlatforms ? ['farfetch'].concat(extraPlatforms) : ['farfetch'],
         limit: 24,
-        // Extra platforms (Mytheresa/Shopbop etc) usually require browser rendering.
         useBrowser: !!this.data.enableExtraPlatforms,
-        // Keep Jina enabled for sites where it works; server will fallback to browser when Jina yields 0 items.
         viaJina: true,
         page: 1,
         renderChart: true,
@@ -748,7 +740,6 @@ Page({
         });
         const crawlDisplayProducts = products.slice(0, this.data.crawlPageSize);
         const evidenceUrl = (data.evidence && data.evidence[0] && data.evidence[0].evidenceUrl) ? data.evidence[0].evidenceUrl : '';
-        // Prefer absolute URL provided by server to avoid stale baseUrl/IP issues.
         const chartUrl = data.chartImageUrl || (data.chartImagePath ? `${baseUrl}/${data.chartImagePath}` : '');
         const derivedKeyword = data.keyword || query;
 
@@ -894,14 +885,14 @@ Page({
     const baseUrl = this.data.baseUrl || getBaseUrl();
     const nextPage = Math.max(1, Number(this.data.crawlRemotePage || 1)) + 1;
 
-    this.setData({ crawlLoading: true, crawlError: '' });
+    this.setData({ crawlLoading: true, loadMoreLoading: true, crawlError: '' });
     wx.showLoading({ title: '正在紧密搜罗中！', mask: false });
 
     const extraPlatforms = ['mytheresa', 'shopbop', 'luisaviaroma', 'matchesfashion', 'revolve', 'fwrd', 's24'];
     wx.request({
       url: `${baseUrl}/api/scrape`,
       method: 'POST',
-      timeout: this.data.enableExtraPlatforms ? 65000 : 25000,
+      timeout: this.data.enableExtraPlatforms ? 90000 : 45000,
       data: {
         keyword: query,
         platforms: this.data.enableExtraPlatforms ? ['farfetch'].concat(extraPlatforms) : ['farfetch'],
@@ -959,7 +950,7 @@ Page({
       },
       complete: () => {
         wx.hideLoading();
-        this.setData({ crawlLoading: false });
+        this.setData({ crawlLoading: false, loadMoreLoading: false });
       },
     });
   },
@@ -1050,6 +1041,7 @@ Page({
       combinedDisplayProducts: [],
       combinedPageIndex: 0,
       error: '',
+      networkError: false,
 
       crawlSearchedInput: '',
       crawlSearchedQuery: '',
@@ -1065,6 +1057,12 @@ Page({
       crawlError: '',
     });
     console.log('[onClear] Cache cleared, all data reset');
+  onRetryNetwork() {
+    this.setData({ 
+      networkError: false, 
+      error: '',
+      crawlError: '' 
+    });
   },
 
 });

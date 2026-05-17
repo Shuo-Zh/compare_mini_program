@@ -8,8 +8,9 @@
     </view>
     <view class="search">
       <input class="ipt ipt-search" placeholder="输入商品关键词或粘贴京东/淘宝链接" value="{{query}}" bindinput="onInput" bindblur="onInputBlur" confirm-type="search" bindconfirm="onInputConfirm" />
-      <button class="btn btn-search" loading="{{loading}}" disabled="{{loading}}" bindtap="onCompare">比价</button>
+      <button class="btn btn-search" loading="{{loading || crawlLoading}}" disabled="{{loading || crawlLoading}}" bindtap="onCompare">🔍 比价</button>
     </view>
+    <!-- 后端调试信息已隐藏
     <view class="devbar">
       <view class="devleft ellipsis">后端：{{baseUrl}}</view>
       <view class="devright">
@@ -30,12 +31,24 @@
       </view>
       <view wx:if="{{navError}}" class="small warn-text">导航错误：{{navError}}</view>
     </view>
+-->
     <view class="search-actions">
       <view class="clear" bindtap="onClear">清除结果</view>
     </view>
   </view>
 
-  <view wx:if="{{error}}" class="card msg error-card">
+  <view wx:if="{{networkError}}" class="card msg network-error-card">
+    <view class="network-icon">🚫</view>
+    <view class="network-title">连接失败</view>
+    <view class="network-hint">暂时无法连接到服务器</view>
+    <view class="network-tips">
+      <text>• 请检查您的网络连接</text>
+      <text>• 如有问题，请联系管理员</text>
+    </view>
+    <button class="btn btn-network-retry" bindtap="onRetryNetwork">重试</button>
+  </view>
+
+  <view wx:elif="{{error}}" class="card msg error-card">
     <view class="subtitle">请求错误</view>
     <view class="error">{{error}}</view>
   </view>
@@ -45,19 +58,23 @@
   <view wx:if="{{combinedDisplayProducts.length}}" class="card list">
     <view class="section-head">
       <view class="subtitle">结果流</view>
-      <view class="section-hint">每页3条 · 触底继续</view>
+      <view class="section-hint">每页4条 · 触底继续</view>
     </view>
+    <!-- 输入输出信息已隐藏
     <view class="subline ellipsis">输入：{{searchedInput || crawlSearchedInput || query}}</view>
     <view class="subline ellipsis">关键词：{{searchedQuery || crawlSearchedQuery || searchedInput || query}}</view>
     <view class="evidence-row" wx:if="{{sourceUrl || crawlSourceUrl}}">
       <text wx:if="{{sourceUrl}}" class="pill-link" bindtap="onOpenSource" data-url="{{sourceUrl}}">识别来源</text>
       <text wx:if="{{crawlSourceUrl}}" class="pill-link" bindtap="onOpenSource" data-url="{{crawlSourceUrl}}">爬虫来源</text>
     </view>
+-->
     <view wx:if="{{loading || crawlLoading}}" class="small">正在紧密搜罗中！</view>
-    <view wx:if="{{crawlError}}" class="small warn-text">爬虫：{{crawlError}}</view>
+    <view wx:if="{{loadMoreLoading}}" class="small">加载更多中...</view>
+    <!-- 爬取证据已隐藏
     <view class="evidence-row" wx:if="{{crawlEvidenceUrl}}">
       <text class="pill-link" bindtap="onOpenEvidence" data-url="{{crawlEvidenceUrl}}">查看抓取证据</text>
     </view>
+-->
 
     <view class="grid">
       <view wx:for="{{combinedDisplayProducts}}" wx:for-index="idx" wx:key="url" class="result" bindtap="onCardTap" bindlongpress="onCopyLink" data-idx="{{idx}}" data-url="{{item.url}}">
@@ -79,8 +96,24 @@
       </view>
     </view>
   </view>
-  <view wx:elif="{{(searchedQuery || crawlSearchedQuery) && !combinedDisplayProducts.length && !loading && !crawlLoading && !error}}" class="card msg">
-    <view class="subtitle">结果流</view>
-    <view class="small">未找到结果，请换个关键词或粘贴商品链接再试。</view>
+  <view wx:elif="{{(searchedQuery || crawlSearchedQuery) && !combinedDisplayProducts.length && !loading && !crawlLoading && !error && !crawlError}}" class="card msg empty-state">
+    <view class="empty-icon">🔍</view>
+    <view class="empty-title">未找到相关商品</view>
+    <view class="empty-hint">试试以下方法：</view>
+    <view class="empty-tips">
+      <text>• 换一个更通用的关键词</text>
+      <text>• 粘贴完整的商品链接</text>
+      <text>• 检查商品是否已下架</text>
+    </view>
+  </view>
+  <view wx:elif="{{(searchedQuery || crawlSearchedQuery) && !combinedDisplayProducts.length && !loading && !crawlLoading && crawlError}}" class="card msg empty-state">
+    <view class="empty-icon">😔</view>
+    <view class="empty-title">{{crawlError}}</view>
+    <view class="empty-hint">试试以下方法：</view>
+    <view class="empty-tips">
+      <text>• 换一个更通用的关键词</text>
+      <text>• 粘贴完整的商品链接</text>
+      <text>• 检查商品是否已下架</text>
+    </view>
   </view>
 </view>

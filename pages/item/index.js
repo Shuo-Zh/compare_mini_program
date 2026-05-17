@@ -210,7 +210,7 @@ Page({
           this.setData({ _retriedBaseUrl: true }, () => this.onRefresh(callback));
           return;
         }
-        this.setData({ error: `请求失败：${baseUrl}（请确认后端 3001 已启动，且小程序后端地址为局域网IP）` });
+        this.setData({ error: `请求失败：${baseUrl}` });
       },
       complete: () => {
         wx.hideLoading();

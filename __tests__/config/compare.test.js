@@ -29,7 +29,7 @@ describe('compare.js 配置模块', () => {
     });
 
     it('应该定义生产环境地址', () => {
-      expect(PROD_BASE_URL).toBe('https://your-production-api.com');
+      expect(PROD_BASE_URL).toBe('https://qhzs.work');
     });
   });
 
